@@ -109,7 +109,7 @@ public class SSLListener {
 				
 				for(SSL_DetectionRobot r : ssl_wrapper.getDetection().getRobotsBlueList()){
 					addDetection("b" + r.getRobotId(), r, receiveTime);			
-					System.out.println("Found: " + r.getRobotId());
+					//System.out.println("Found: " + r.getRobotId());
 				}
 				
 				for(SSL_DetectionRobot r : ssl_wrapper.getDetection().getRobotsYellowList()){

@@ -20,7 +20,12 @@
 			<groupId>com.vividsolutions</groupId>
 			<artifactId>jts</artifactId>
 			<version>1.13</version>
-		</dependency>
+	</dependency>
+	<dependency>
+           <groupId>org.openjfx</groupId>
+           <artifactId>javafx-controls</artifactId>
+           <version>11-ea+19</version>
+       </dependency>
   </dependencies>
   
   <build>
