@@ -14,14 +14,17 @@ public class Test {
 		double fps = 30;
 		Long oldTime =0L;
 		try {
-			while(System.in.read()==-1) {
+			while(System.in.available()==0) {
 				var d = SSLListener.getDetection("b1");
 				if (d!=null) {
-					var dRobot = d.getKey();
 					var dTime   = d.getValue();
-					var deltaT = dTime = oldTime;
+					var deltaT = dTime - oldTime;
+					if(deltaT == 0 ) continue;
 					oldTime = dTime;
-					fps = 0.9*fps + 0.1 /deltaT;
+					fps = 0.9*fps + 0.1 *1000/deltaT;
+					
+					var dRobot = d.getKey();
+					
 					System.out.println("Detected: " + dRobot.getRobotId());
 					System.out.println("Pos,tita: (" + dRobot.getX() + "," + dRobot.getY() + "," + dRobot.getOrientation() +")" );
 					System.out.println("TIME:     " + dTime );
@@ -29,6 +32,12 @@ public class Test {
 					System.out.println("fps:      " + fps);
 					System.out.println();
 					
+					try {
+						Thread.sleep(1);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					
 				}
 				
