@@ -96,9 +96,9 @@ public class SSLListener {
 				byte[] buf = new byte[BUFFER_SIZE];
 				DatagramPacket packet = new DatagramPacket(buf, BUFFER_SIZE);
 				
-				System.out.println("Waiting for package...");
+				//System.out.println("Waiting for package...");
 				socket.receive(packet);
-				System.out.println("Package received...");
+				//System.out.println("Package received...");
 				Long receiveTime = System.currentTimeMillis();
 				byte[] data = new byte[packet.getLength()];
 				System.arraycopy(buf, 0, data, 0, packet.getLength());
