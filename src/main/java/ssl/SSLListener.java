@@ -5,17 +5,24 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.HashMap;
 
+import ssl.MessagesRobocupSslDetection.SSL_DetectionFrame;
 import ssl.MessagesRobocupSslDetection.SSL_DetectionRobot;
 import ssl.MessagesRobocupSslWrapper.SSL_WrapperPacket;
 
-import com.vividsolutions.jts.geom.Coordinate;
-
 import javafx.util.Pair;
 
-//import edu.usf.ratsim.robot.naorobot.protobuf.MessagesRobocupSslDetection.SSL_DetectionRobot;
-//import edu.usf.ratsim.robot.naorobot.protobuf.MessagesRobocupSslWrapper.SSL_WrapperPacket;
-//import edu.usf.ratsim.support.Position;
-
+/**
+ * This file implements a multicast listener for ssl-vision packages and stores them.
+ * So far we only support a single camera and no smoothing is done of the robot position
+ * 
+ * USAGE:
+ * 	 call initListener() to start listening
+ *   call closeListener() to stop listening
+ *   
+ * 
+ * @author bucef
+ *
+ */
 
 public class SSLListener {
 	
@@ -26,36 +33,33 @@ public class SSLListener {
 	static final int PORT = 10006;
 	static final int BUFFER_SIZE = 4096;
 	
-	static HashMap<String, Pair<SSL_DetectionRobot,Long>> detections = new HashMap();
+	static HashMap<String, Pair<SSL_DetectionRobot,Double>> detections = new HashMap();
 	
 	static Boolean closeListener = false;
 	static Thread listenerThread = null;
 	
-	static synchronized void addDetection(String id, SSL_DetectionRobot coord,Long time) {
-		detections.put(id,new Pair(coord,time));
-	}
-	
-	static synchronized public Pair<SSL_DetectionRobot,Long> getDetection(String id) {
-		return detections.get(id);
-	}
-	
-	
-	static synchronized void setCloseListener(boolean value) {
-		closeListener = value;
-	}
-	
-	static synchronized Boolean getCloseListener() {
-		return closeListener;
-	}
 	
 	
 	
+	/***
+	 * Default listener initializer
+	 */
 	static public void initListener() {
+		initListener(VISION_ADDRESS,PORT);
+	}
+	
+	
+	/***
+	 * Listener initializer with given multicast ip and port
+	 * @param ip
+	 * @param port
+	 */
+	static public void initListener(String ip, int port) {
 		
 		try {
 			System.out.println("Initializing SSL Client...");
-			group  = InetAddress.getByName(VISION_ADDRESS);
-			socket = new MulticastSocket(PORT);
+			group  = InetAddress.getByName(ip);
+			socket = new MulticastSocket(port);
 			socket.joinGroup(group);
 			socket.setReceiveBufferSize(BUFFER_SIZE);
 			System.out.println("Done initializing SSL Client...");
@@ -75,6 +79,10 @@ public class SSLListener {
 				
 	}
 	
+	
+	/***
+	 * Function to be called to close listener
+	 */
 	static public void closeListener() {
 		setCloseListener(true);
 		try {
@@ -85,7 +93,57 @@ public class SSLListener {
 		}
 	}
 	
-	static public void listen() {
+	
+	/***
+	 *
+	 * @param robotId
+	 * @return returns the last detection package for the given robot id
+	 */
+	static synchronized public Pair<SSL_DetectionRobot,Double> getDetection(String robotId) {
+		return detections.get(robotId);
+	}
+	
+	
+	
+	/***
+	 * Private method to signal close listener
+	 * @param value
+	 */
+	static synchronized void setCloseListener(boolean value) {
+		closeListener = value;
+	}
+	
+	
+	
+	/***
+	 * Private method that adds a detection
+	 * @param robotId		
+	 * @param coord 
+	 * @param time
+	 */
+	static synchronized void addDetection(String robotId, SSL_DetectionRobot detection_package,Double detectionTime) {
+		detections.put(robotId,new Pair(detection_package,detectionTime));
+	}
+	
+	
+	
+	
+	/***
+	 * Private method to read shared variable
+	 * @return
+	 */
+	
+	static synchronized Boolean getCloseListener() {
+		return closeListener;
+	}
+	
+	
+	
+	
+	/***
+	 * Private method that runs in a thread to listen for ssl packages
+	 */
+	static private void listen() {
 		
 		System.out.println("Listener Thread Started...");
 		
@@ -99,21 +157,29 @@ public class SSLListener {
 				//System.out.println("Waiting for package...");
 				socket.receive(packet);
 				//System.out.println("Package received...");
-				Long receiveTime = System.currentTimeMillis();
+				Double receiveTime = System.currentTimeMillis()/1000.0;
 				byte[] data = new byte[packet.getLength()];
 				System.arraycopy(buf, 0, data, 0, packet.getLength());
 				
 				
 				SSL_WrapperPacket ssl_wrapper = SSL_WrapperPacket.parseFrom(data);
 				
+				//TODO process information according to camera id
+				int cameraID = ssl_wrapper.getDetection().getCameraId();
+				double captureTime = ssl_wrapper.getDetection().getTCapture();
 				
+				
+//				ssl_wrapper.getDetection().
+				
+				System.out.println("Times: "+ String.format("%.3f", receiveTime) + "\t" + String.format("%.3f", captureTime) );
 				for(SSL_DetectionRobot r : ssl_wrapper.getDetection().getRobotsBlueList()){
-					addDetection("b" + r.getRobotId(), r, receiveTime);			
+					addDetection("b" + r.getRobotId(), r, receiveTime);
+//					r.get
 					//System.out.println("Found: " + r.getRobotId());
 				}
 				
 				for(SSL_DetectionRobot r : ssl_wrapper.getDetection().getRobotsYellowList()){
-					addDetection("y" + r.getRobotId(), r, receiveTime);						
+					addDetection("y" + r.getRobotId(), r, captureTime);						
 				}
 
 			} catch (Exception e) {
@@ -128,71 +194,11 @@ public class SSLListener {
 	}
 	
 	
-	
-//	public static void main(String[] args) {
-//	
-//	// VisionListener v = new VisionListener();
-//	// while (true){
-//	// System.out.println(v.getRobotPoint());
-//	// try {
-//	// Thread.sleep(100);
-//	// } catch (InterruptedException e) {
-//	// // TODO Auto-generated catch block
-//	// e.printStackTrace();
-//	// }
-//	// }
-//	Position p = null;
-//	try {
-//		VisionListener v = new VisionListener();
-//		Thread.sleep(10000);
-//		p = v.getLastPosition();
-//		System.out.println("private final float nex = " + p.getX() + "f;");
-//		System.out.println("private final float ney = " + p.getY() + "f;");
-//		Thread.sleep(10000);
-//		p = v.getLastPosition();
-//		System.out.println("private final float sex = " + p.getX() + "f;");
-//		System.out.println("private final float sey = " + p.getY() + "f;");
-//		Thread.sleep(10000);
-//		p = v.getLastPosition();
-//		System.out.println("private final float swx = " + p.getX() + "f;");
-//		System.out.println("private final float swy = " + p.getY() + "f;");
-//		Thread.sleep(10000);
-//		p = v.getLastPosition();
-//		System.out.println("private final float nwx = " + p.getX() + "f;");
-//		System.out.println("private final float nwy = " + p.getY() + "f;");
-//	} catch (InterruptedException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	}
-//}
+
 	
 	
 	
 }
-
-
-////North east
-////(414, 1270)
-////
-////South east
-////(2740, 1309)	
-////
-////South west
-////(2719, -1014)
-////
-////North west
-////(397, -1020)
-
-//private final float nex = 272.33234f;
-//private final float ney = 1152.6455f;
-//private final float sex = 2602.887f;
-//private final float sey = 1195.9545f;
-//private final float swx = 2588.3923f;
-//private final float swy = -1225.2101f;
-//private final float nwx = 223.70718f;
-//private final float nwy = -1251.4977f;
-
-
 
 
 //import javax.vecmath.Point3f;

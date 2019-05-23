@@ -12,7 +12,7 @@ public class Test {
 		
 		SSLListener.initListener();
 		double fps = 30;
-		Long oldTime =0L;
+		Double oldTime =0.0;
 		try {
 			while(System.in.available()==0) {
 				var d = SSLListener.getDetection("b1");
