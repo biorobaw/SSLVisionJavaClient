@@ -1,4 +1,10 @@
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+
+import org.apache.commons.net.ntp.NTPUDPClient;
+import org.apache.commons.net.ntp.TimeInfo;
 
 import ssl.SSLListener;
 
@@ -7,6 +13,13 @@ public class Test {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
+		
+		
+		System.out.println("Calculating time offset: ");
+		//SSLListener.setOffset(CMAC1_IP,true);
+		SSLListener.setOffset(true);
+		
+		
 		
 		System.out.println("Testing SSL vision client");
 		

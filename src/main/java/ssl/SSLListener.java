@@ -1,9 +1,15 @@
 package ssl;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
+
+import org.apache.commons.net.ntp.NTPUDPClient;
+import org.apache.commons.net.ntp.TimeInfo;
 
 import ssl.MessagesRobocupSslDetection.SSL_DetectionFrame;
 import ssl.MessagesRobocupSslDetection.SSL_DetectionRobot;
@@ -18,7 +24,7 @@ import javafx.util.Pair;
  * USAGE:
  * 	 call initListener() to start listening
  *   call closeListener() to stop listening
- *   
+ *   call 
  * 
  * @author bucef
  *
@@ -30,6 +36,7 @@ public class SSLListener {
 	static MulticastSocket socket;
 	
 	static final String VISION_ADDRESS = "224.5.23.2";
+	static final String CMAC1_IP = "131.247.14.105";
 	static final int PORT = 10006;
 	static final int BUFFER_SIZE = 4096;
 	
@@ -38,8 +45,52 @@ public class SSLListener {
 	static Boolean closeListener = false;
 	static Thread listenerThread = null;
 	
+	static Double timeOffset = 0.0;
 	
 	
+	/***
+	 * Function to calculate the difference between the time of the clocks
+	 * @param printResults 
+	 * @return
+	 */
+	static public boolean setOffset(boolean printResults) {
+		return setOffset(CMAC1_IP, printResults);
+	}
+	
+	
+	/***
+	 * Function to calculate the difference between the time of the clocks
+	 * @param ftpServerIP   IP of machine running ssl vision
+	 * @param printResults  if true, print offset and latency
+	 * @return
+	 */
+	static public boolean setOffset(String ftpServerIP, boolean printResults) {
+		try {
+			NTPUDPClient client = new NTPUDPClient();
+			client.open();			
+			TimeInfo info = client.getTime(InetAddress.getByName(ftpServerIP));
+			info.computeDetails(); // compute offset/delay if not already done
+			Long offsetValue = info.getOffset();
+			Long delayValue = info.getDelay();
+			String delay = (delayValue == null) ? "N/A" : delayValue.toString();
+			String offset = (offsetValue == null) ? "N/A" : offsetValue.toString();
+			
+			if(offsetValue!=null) timeOffset = offsetValue / 1000.0;
+			else {
+				System.err.println("ERROR: Offset not available");
+				return false;
+			}
+			
+			if(printResults) 
+				System.out.println(" Roundtrip delay(ms)=" + delay + ", clock offset(ms)=" + timeOffset); // offset in ms
+			client.close();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			return false;
+		} 
+		return true;
+	}
 	
 	/***
 	 * Default listener initializer
@@ -166,7 +217,7 @@ public class SSLListener {
 				
 				//TODO process information according to camera id
 				int cameraID = ssl_wrapper.getDetection().getCameraId();
-				double captureTime = ssl_wrapper.getDetection().getTCapture();
+				double captureTime = ssl_wrapper.getDetection().getTCapture() - timeOffset;
 				
 				
 //				ssl_wrapper.getDetection().
@@ -175,7 +226,7 @@ public class SSLListener {
 				for(SSL_DetectionRobot r : ssl_wrapper.getDetection().getRobotsBlueList()){
 					addDetection("b" + r.getRobotId(), r, receiveTime);
 //					r.get
-					//System.out.println("Found: " + r.getRobotId());
+					//System.out.println("Found: " + r.getRobotId()  + " " + r.getX() + " " + r.getY());
 				}
 				
 				for(SSL_DetectionRobot r : ssl_wrapper.getDetection().getRobotsYellowList()){

@@ -1,8 +1,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>SSLVisionClient</groupId>
+  <groupId>org.github.biorobaw</groupId>
   <artifactId>SSLVisionClient</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  
+  <licenses>
+	  <license>
+	    <name>MIT License</name>
+	    <url>http://www.opensource.org/licenses/mit-license.php</url>
+	  </license>
+	</licenses>
+  
+  <developers>
+    <developer>
+      <name>Pablo Scleidorovich</name>
+      <email>pablos@mail.usf.edu</email>
+      <organizationUrl>https://github.com/bucefalog</organizationUrl>
+    </developer>
+  </developers>
   
   
   <properties>
@@ -26,6 +41,11 @@
            <artifactId>javafx-controls</artifactId>
            <version>11-ea+19</version>
        </dependency>
+    <dependency>
+	    <groupId>commons-net</groupId>
+	    <artifactId>commons-net</artifactId>
+	    <version>3.6</version>
+	</dependency>
   </dependencies>
   
   <build>
@@ -59,5 +79,24 @@
 	</plugin>
 	</plugins>
   	</build>
+  
+  <url>https://github.com/biorobaw/SSLVisionJavaClient</url>
+  <name>SSL Vision Java Client</name>
+  <description>A Java client for SSL (small size league) vision.
+Not meant to play in SSL but for tracking robots in experiments.</description>
+  <scm>
+  	<url>https://github.com/biorobaw/SSLVisionJavaClient</url>
+  	<connection>scm:git:git://github.com:biorobaw/SSLVisionJavaClient.git</connection>
+  	<developerConnection>scm:git:ssh://github.com:biorobaw/SSLVisionJavaClient.git</developerConnection>
+  </scm>
+  
+  
+  
+	<distributionManagement>
+	    <repository>
+	        <id>internal.repo</id>
+	        <url>file://${project.build.directory}/mvn-repo</url>
+	    </repository>
+	</distributionManagement>
   
 </project>
